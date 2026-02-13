@@ -297,7 +297,7 @@ namespace GanzfeldController
 
             SaveFileDialog dialog = new SaveFileDialog
             {
-                InitialDirectory = @"D:\master_japonia\tsujilab\Results",
+                InitialDirectory = @"C:\Users\tsujilab\source\results",
                 Title = "Browse rst file",
                 CheckPathExists = true,
                 CheckFileExists = false,
@@ -417,148 +417,6 @@ namespace GanzfeldController
             AmpLEDs.Blue = results[2];
             AmpLEDs.Orange = results[3];
 
-            /*
-            RGB2 BgnDuty = new RGB2();
-            RGB2 Duty = new RGB2();
-            RGB2 AmpLEDs1 = new RGB2();
-
-            double[] results = new double[4];
-            double[] rawIntensities = {
-                ConRed + AmpLEDs.Red,
-                ConGreen + AmpLEDs.Green,
-                ConBlue + AmpLEDs.Blue,
-                ConOrange + AmpLEDs.Orange
-            };
-
-            //Red
-            BgnDuty.Red = ConRed;
-            AmpLEDs1.Red = AmpLEDs.Red;
-
-            // check if the wave is too "tall" for the ceiling (100% brightness)
-            Duty.Red = BgnDuty.Red + AmpLEDs1.Red;
-            Duty.Red = Duty.Red * (Duty.Red * Duty.Red * Duty.Red * IntensityVoltage.Int2Volt[0, 0] + Duty.Red * Duty.Red * IntensityVoltage.Int2Volt[0, 1] + Duty.Red * IntensityVoltage.Int2Volt[0, 2] + IntensityVoltage.Int2Volt[0, 3]);
-            
-            if (Duty.Red >= 1) {
-                // AmpLEDs.Red = 0;
-                Duty.Red = 0.99;
-                // EndFlg[VectorDirection] = 1;
-            }
-
-            if (Duty.Red <= 0) {
-                AmpLEDs.Red = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            AmpLEDs1.Red = AmpLEDs.Red;
-
-            // check if the wave is too "deep" for the floor (0% brightness)
-            Duty.Red = BgnDuty.Red - AmpLEDs1.Red;
-            Duty.Red = Duty.Red * (Duty.Red * Duty.Red * Duty.Red * IntensityVoltage.Int2Volt[0, 0] + Duty.Red * Duty.Red * IntensityVoltage.Int2Volt[0, 1] + Duty.Red * IntensityVoltage.Int2Volt[0, 2] + IntensityVoltage.Int2Volt[0, 3]);
-           
-            if (Duty.Red >= 1) {
-                Duty.Red = 
-                EndFlg[VectorDirection] = 1;
-            }
-            if (Duty.Red <= 0) {
-                AmpLEDs.Red = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            //Green
-            BgnDuty.Green = ConGreen;
-            AmpLEDs1.Green = AmpLEDs.Green;
-            
-            Duty.Green = BgnDuty.Green + AmpLEDs1.Green;
-            Duty.Green = Duty.Green * (Duty.Green * Duty.Green * Duty.Green * IntensityVoltage.Int2Volt[1, 0] + Duty.Green * Duty.Green * IntensityVoltage.Int2Volt[1, 1] + Duty.Green * IntensityVoltage.Int2Volt[1, 2] + IntensityVoltage.Int2Volt[1, 3]);
-            
-            if (Duty.Green >= 1) {
-                AmpLEDs.Green = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            if (Duty.Green <= 0) {
-                AmpLEDs.Green = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            AmpLEDs1.Green = AmpLEDs.Green;
-
-            Duty.Green = BgnDuty.Green - AmpLEDs1.Green;
-            Duty.Green = Duty.Green * (Duty.Green * Duty.Green * Duty.Green * IntensityVoltage.Int2Volt[1, 0] + Duty.Green * Duty.Green * IntensityVoltage.Int2Volt[1, 1] + Duty.Green * IntensityVoltage.Int2Volt[1, 2] + IntensityVoltage.Int2Volt[1, 3]);
-
-            if (Duty.Green >= 1) {
-                AmpLEDs.Green = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            if (Duty.Green <= 0) {
-                AmpLEDs.Green = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            //Blue
-            BgnDuty.Blue = ConBlue;
-            AmpLEDs1.Blue = AmpLEDs.Blue;
-
-            Duty.Blue = BgnDuty.Blue + AmpLEDs1.Blue;
-            Duty.Blue = Duty.Blue * (Duty.Blue * Duty.Blue * Duty.Blue * IntensityVoltage.Int2Volt[2, 0] + Duty.Blue * Duty.Blue * IntensityVoltage.Int2Volt[2, 1] + Duty.Blue * IntensityVoltage.Int2Volt[2, 2] + IntensityVoltage.Int2Volt[2, 3]);
-            
-            if (Duty.Blue >= 1) {
-                AmpLEDs.Blue = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            
-            if (Duty.Blue <= 0) {
-                AmpLEDs.Blue = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            AmpLEDs1.Blue = AmpLEDs.Blue;
-
-            Duty.Blue = BgnDuty.Blue - AmpLEDs1.Blue;
-            Duty.Blue = Duty.Blue * (Duty.Blue * Duty.Blue * Duty.Blue * IntensityVoltage.Int2Volt[2, 0] + Duty.Blue * Duty.Blue * IntensityVoltage.Int2Volt[2, 1] + Duty.Blue * IntensityVoltage.Int2Volt[2, 2] + IntensityVoltage.Int2Volt[2, 3]);
-            
-            if (Duty.Blue >= 1) {
-                AmpLEDs.Blue = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            
-            if (Duty.Blue <= 0) {
-                AmpLEDs.Blue = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            //Orange
-            BgnDuty.Orange = ConOrange;
-            AmpLEDs1.Orange = AmpLEDs.Orange;
-            
-            Duty.Orange = BgnDuty.Orange + AmpLEDs1.Orange;
-            Duty.Orange = Duty.Orange * (Duty.Orange * Duty.Orange * Duty.Orange * IntensityVoltage.Int2Volt[3, 0] + Duty.Orange * Duty.Orange * IntensityVoltage.Int2Volt[3, 1] + Duty.Orange * IntensityVoltage.Int2Volt[3, 2] + IntensityVoltage.Int2Volt[3, 3]);
-            
-            if (Duty.Orange >= 1) {
-                AmpLEDs.Orange = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            if (Duty.Orange <= 0) {
-                AmpLEDs.Orange = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-
-            AmpLEDs1.Orange = AmpLEDs.Orange;
-
-            Duty.Orange = BgnDuty.Orange - AmpLEDs1.Orange;
-            Duty.Orange = Duty.Orange * (Duty.Orange * Duty.Orange * Duty.Orange * IntensityVoltage.Int2Volt[3, 0] + Duty.Orange * Duty.Orange * IntensityVoltage.Int2Volt[3, 1] + Duty.Orange * IntensityVoltage.Int2Volt[3, 2] + IntensityVoltage.Int2Volt[3, 3]);
-            
-            if (Duty.Orange >= 1) {
-                AmpLEDs.Orange = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            
-            if (Duty.Orange <= 0) {
-                AmpLEDs.Orange = 0;
-                EndFlg[VectorDirection] = 1;
-            }
-            */
-
         }
 
         void Cone2PhosAmpPhase(Receptors AmpReceptors, ref RGB2 AmpLEDs, Receptors PhaseReceptor, ref RGB2 PhaseLEDs)
@@ -661,7 +519,25 @@ namespace GanzfeldController
          * Sine/Cosine math to split that amplitude into specific targets for the L-cones and M-cones in the eye. */
 
         {
-            currentStaircaseAmp = 0.0005 * Math.Pow(1.258925, (double)ContrastLevel); // 0.0005 * Math.Pow(1.258925, (double)ContrastLevel);
+            double angle, amp, OmegaT;
+            angle = PhaseAngle[VectorDirection];
+            double SF = SFs[VectorDirection];
+            amp = 0.0005 * Math.Pow(1.258925, (double)ContrastLevel);
+            OmegaT = 2.0 * Math.PI * angle / 360.0;
+
+            //伊藤変更
+            //Contrast.L = amp* Math.Cos(OmegaT);
+            //Contrast.M = amp* Math.Sin(OmegaT);
+            Contrast.L = 0;
+            Contrast.M = 0;
+            //
+            Contrast.S = 0.0;
+            Contrast.ipRGC = 0.0;
+            //Contrast.L = amp * Math.Cos(angleX / 180 * PI) * Math.Cos(OmegaT);//amp*cos(angleX/180*PI)*cos(OmegaT);
+            //Contrast.M = amp * Math.Sin(angleX / 180 * PI) * Math.Cos(OmegaT);//amp*sin(angleX/180*PI)*cos(OmegaT);
+            //Contrast.S = 0.0;//*cos(OmegaT);//amp*sin(OmegaT);
+            //Contrast.ipRGC = amp * Math.Sin(OmegaT);
+            //
         }
 
         //---------------------------------------------------------------------------
@@ -876,9 +752,34 @@ namespace GanzfeldController
 
         void MakeLUTs()
         {
+            //short i,j;
+            RGB2 PhosLumi1 = new RGB2();
+            Receptors ReceptorOut = new Receptors();
+            Receptors StmlCones = new Receptors();
+
+            /* obtain mean(BG) luminance */
+            PhosLumi1.Red = ConRed;
+            PhosLumi1.Green = ConGreen;
+            PhosLumi1.Blue = ConBlue;
+            PhosLumi1.Orange = ConOrange;
+
+            /* derive mean luminance of each cone */
+            Phos2Cone(ref PhosLumi1, ref ReceptorOut);
+
+            StmlCones.L = ReceptorOut.L * Contrast.L;
+            StmlCones.M = ReceptorOut.M * Contrast.M;
+            StmlCones.S = ReceptorOut.S * Contrast.S;
+            StmlCones.ipRGC = ReceptorOut.ipRGC * Contrast.ipRGC;
+            //Cone2PhosAmp(StmlCones, ref AmpLEDs);  //add 24Nov2011
+            Cone2PhosAmpPhase(StmlCones, ref AmpLEDs, PhaseReceptors, ref PhaseLEDs);  //add 25Apr2015 ST
+            CalcDuties(ref AmpLEDs);
+
+            int NumberofData;
+            int counters = 0;
+
             SerialSend();
         }
-        
+
         void UpDown71(bool isCorrect)  // 2-down, 1-up staircase logic
         {
             Record[VectorDirection].second = Record[VectorDirection].first;  // shifts the previous answer into a "memory" slot so the computer knows what happened last trial

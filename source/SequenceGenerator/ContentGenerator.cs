@@ -19,10 +19,11 @@ namespace SequenceGenerator
         private const int StimulusDuration = 3000; //msec
         private const int RampTime = 1000; //msec
         private const int WaitDuration = 1000; //ms
-        private const double TF = 1;// Hz
+        private const double TF = 0.33333;// Hz
         private const bool Sin_SinOnFlag = false;
 
         private const int MeasurementDuration = 20000;
+        private const int BeepIndex = 4;
 
 
         #endregion
@@ -166,363 +167,158 @@ namespace SequenceGenerator
             return jsonContent;
         }
 
-        public static JsonContent GenerateSineStimulationWithoutHamming(double[] meanArray, double[] contrastArray, double[] phaseReceptorArray)
+        public static JsonContent GenerateSineStimulationWithoutHamming(double[] meanArray, double[] contrastArray, double[] phaseReceptorArray, double[] testStimulus, double[] refStimulus, double[] adaptationStimulus, int direction)
         {
             JsonContent jsonContent = new JsonContent();
-            #region Matrix maths
-            double meanL = meanArray[0];
-            double meanM = meanArray[1];
-            double meanS = meanArray[2];
-            double meansipRGC = meanArray[3];
-            double contrastL = contrastArray[0];
-            double contrastM = contrastArray[1];
-            double contrastS = contrastArray[2];
-            double contrastipRGC = contrastArray[3];
-            double[] meanrgby = new double[4];
 
+            #region Matrix and Vector Setup
+            // Constants for indices
+            double testR = testStimulus[0]; double testG = testStimulus[1]; double testB = testStimulus[2]; double testY = testStimulus[3];
+            double refR = refStimulus[0]; double refG = refStimulus[1]; double refB = refStimulus[2]; double refY = refStimulus[3];
+            double adaptR = adaptationStimulus[0]; double adaptG = adaptationStimulus[1]; double adaptB = adaptationStimulus[2]; double adaptY = adaptationStimulus[3];
 
-            // Build Vectors and Matrix from the array values
-            Vector<double> meanRGBY = Vector<double>.Build.DenseOfArray(meanrgby);
-            Vector<double> meanMLSipRGC = Vector<double>.Build.DenseOfArray(meanArray);
-            Vector<double> phaseReceptor = Vector<double>.Build.DenseOfArray(phaseReceptorArray);
-            Vector<double> contrast = Vector<double>.Build.DenseOfArray(contrastArray);
+            // Build calibration matrix
             Matrix<double> int2Volt = Matrix<double>.Build.DenseOfArray(IntensityVoltage.Int2Volt);
-            Matrix<double> p2CArray = Matrix<double>.Build.DenseOfArray(P2CArray.p2cArray);
-            // Inverse of P2CArray
-            Matrix<double> c2PArray = p2CArray.Inverse();
-            meanRGBY = c2PArray * meanMLSipRGC;
 
-            Vector<double> backgroundCorrectedValue = MapToGammaCorrection(meanRGBY, Matrix.Build.DenseOfArray(IntensityVoltage.Int2Volt));
+            // Prepare arrays for the timeline (100 values per stimulus period)
+            int points = (int)(100 / TF);
+            double[] tRed = new double[points]; double[] tGreen = new double[points]; double[] tBlue = new double[points]; double[] tYellow = new double[points];
+            double[] rRed = new double[points]; double[] rGreen = new double[points]; double[] rBlue = new double[points]; double[] rYellow = new double[points];
+            double[] beepLine = new double[points];
 
+            // Helper Wave vectors
+            Vector<double> RWave = Vector<double>.Build.Dense(points);
+            Vector<double> GWave = Vector<double>.Build.Dense(points);
+            Vector<double> BWave = Vector<double>.Build.Dense(points);
+            Vector<double> YWave = Vector<double>.Build.Dense(points);
+            Vector<double> BeepWave = Vector<double>.Build.Dense(points);
 
+            // Generate the baseline shapes (Trapezoid for LEDs, Pulse for Beep)
+            GenerateWave(ref RWave, 1, 0, false, points);
+            GenerateWave(ref GWave, 1, 0, false, points);
+            GenerateWave(ref BWave, 1, 0, false, points);
+            GenerateWave(ref YWave, 1, 0, false, points);
+            GenerateWave(ref BeepWave, 1, 0, true, points);
+            #endregion
 
-            double[] red = new double[(int)(100 / TF)];
-            double[] green = new double[(int)(100 / TF)];
-            double[] blue = new double[(int)(100 / TF)];
-            double[] yellow = new double[(int)(100 / TF)];
-            double[] lValue = new double [(int)(100 / TF)];
-            double[] mValue = new double[(int)(100 / TF)];
-            double[] sValue = new double[(int)(100 / TF)];
-            double[] ipRGCValue = new double[(int)(100 / TF)];
-            double[] temp = new double[4];
-            double[] rgby = new double[4];
+            #region Fill Pattern Data
+            // Scale the waves by the target intensities (Test vs Reference)
+            for (int i = 0; i < points; i++)
+            {
+                tRed[i] = (testR - adaptR) * RWave[i] + adaptR;
+                rRed[i] = (refR - adaptR) * RWave[i] + adaptR;
 
+                tGreen[i] = (testG - adaptG) * GWave[i] + adaptG;
+                rGreen[i] = (refG - adaptG) * GWave[i] + adaptG;
 
-            Vector<double> LStimulus = Vector<double>.Build.Dense(lValue);
-            Vector<double> MStimulus = Vector<double>.Build.Dense(mValue);
-            Vector<double> SStimulus = Vector<double>.Build.Dense(sValue);
-            Vector<double> ipRGCStimulus = Vector<double>.Build.Dense(ipRGCValue);
+                tBlue[i] = (testB - adaptB) * BWave[i] + adaptB;
+                rBlue[i] = (refB - adaptB) * BWave[i] + adaptB;
 
-            // pattern data for rising up sine stimulation
-            PatternData pRedSineUpData = new PatternData()
+                tYellow[i] = (testY - adaptY) * YWave[i] + adaptY;
+                rYellow[i] = (refY - adaptY) * YWave[i] + adaptY;
+
+                beepLine[i] = BeepWave[i] + 1; // Standard beep level
+            }
+
+            // Convert everything to Gamma-Corrected PWM Values and add to PatternData objects
+            PatternData pRedBgn = new PatternData { Name = "Red Bgn" };
+            PatternData pRedTest = new PatternData { Name = "Red Test" };
+            PatternData pRedRef = new PatternData { Name = "Red Ref" };
+
+            PatternData pGreenBgn = new PatternData { Name = "Green Bgn" };
+            PatternData pGreenTest = new PatternData { Name = "Green Test" };
+            PatternData pGreenRef = new PatternData { Name = "Green Ref" };
+
+            PatternData pBlueBgn = new PatternData { Name = "Blue Bgn" };
+            PatternData pBlueTest = new PatternData { Name = "Blue Test" };
+            PatternData pBlueRef = new PatternData { Name = "Blue Ref" };
+
+            PatternData pOrangeBgn = new PatternData { Name = "Orange Bgn" };
+            PatternData pOrangeTest = new PatternData { Name = "Orange Test" };
+            PatternData pOrangeRef = new PatternData { Name = "Orange Ref" };
+
+            PatternData pBeepBgn = new PatternData { Name = "Beep Bgn" };
+            PatternData pBeepPulse = new PatternData { Name = "Beep Pulse" };
+
+            // Apply the polynomial: y = ax4 + bx3 + cx2 + dx
+            for (int i = 0; i < points; i++)
             {
-                Name = "Red sine rising up"
-            };
-            PatternData pGreenSineUpData = new PatternData()
-            {
-                Name = "Green sine rising up"
-            };
-            PatternData pBlueSineUpData = new PatternData()
-            {
-                Name = "Blue sine rising up"
-            };
-            PatternData pOrangeSineUpData = new PatternData()
-            {
-                Name = "Orange sine rising up"
+                pRedTest.Data.Add((int)((Math.Pow(tRed[i], 4) * int2Volt[0, 0] + Math.Pow(tRed[i], 3) * int2Volt[0, 1] + Math.Pow(tRed[i], 2) * int2Volt[0, 2] + tRed[i] * int2Volt[0, 3]) * MaxPwmValue));
+                pRedRef.Data.Add((int)((Math.Pow(rRed[i], 4) * int2Volt[0, 0] + Math.Pow(rRed[i], 3) * int2Volt[0, 1] + Math.Pow(rRed[i], 2) * int2Volt[0, 2] + rRed[i] * int2Volt[0, 3]) * MaxPwmValue));
+
+                pGreenTest.Data.Add((int)((Math.Pow(tGreen[i], 4) * int2Volt[1, 0] + Math.Pow(tGreen[i], 3) * int2Volt[1, 1] + Math.Pow(tGreen[i], 2) * int2Volt[1, 2] + tGreen[i] * int2Volt[1, 3]) * MaxPwmValue));
+                pGreenRef.Data.Add((int)((Math.Pow(rGreen[i], 4) * int2Volt[1, 0] + Math.Pow(rGreen[i], 3) * int2Volt[1, 1] + Math.Pow(rGreen[i], 2) * int2Volt[1, 2] + rGreen[i] * int2Volt[1, 3]) * MaxPwmValue));
+
+                pBlueTest.Data.Add((int)((Math.Pow(tBlue[i], 4) * int2Volt[2, 0] + Math.Pow(tBlue[i], 3) * int2Volt[2, 1] + Math.Pow(tBlue[i], 2) * int2Volt[2, 2] + tBlue[i] * int2Volt[2, 3]) * MaxPwmValue));
+                pBlueRef.Data.Add((int)((Math.Pow(rBlue[i], 4) * int2Volt[2, 0] + Math.Pow(rBlue[i], 3) * int2Volt[2, 1] + Math.Pow(rBlue[i], 2) * int2Volt[2, 2] + rBlue[i] * int2Volt[2, 3]) * MaxPwmValue));
+
+                pOrangeTest.Data.Add((int)((Math.Pow(tYellow[i], 4) * int2Volt[3, 0] + Math.Pow(tYellow[i], 3) * int2Volt[3, 1] + Math.Pow(tYellow[i], 2) * int2Volt[3, 2] + tYellow[i] * int2Volt[3, 3]) * MaxPwmValue));
+                pOrangeRef.Data.Add((int)((Math.Pow(rYellow[i], 4) * int2Volt[3, 0] + Math.Pow(rYellow[i], 3) * int2Volt[3, 1] + Math.Pow(rYellow[i], 2) * int2Volt[3, 2] + rYellow[i] * int2Volt[3, 3]) * MaxPwmValue));
+
+                pBeepPulse.Data.Add((int)(beepLine[i] * MaxPwmValue / 2));
+            }
+
+            // Add Background Values (Single point)
+            Vector<double> backCorrected = MapToGammaCorrection(Vector<double>.Build.DenseOfArray(adaptationStimulus), int2Volt);
+            pRedBgn.Data.Add((int)(backCorrected[0] * MaxPwmValue));
+            pGreenBgn.Data.Add((int)(backCorrected[1] * MaxPwmValue));
+            pBlueBgn.Data.Add((int)(backCorrected[2] * MaxPwmValue));
+            pOrangeBgn.Data.Add((int)(backCorrected[3] * MaxPwmValue));
+            pBeepBgn.Data.Add(0);
+
+            // Register Patterns into JSON (Strict Order for indexing)
+            // Red: 0(B), 1(T), 2(B), 3(R), 4(B)
+            jsonContent.PatternDatas.Add(pRedBgn); jsonContent.PatternDatas.Add(pRedTest); jsonContent.PatternDatas.Add(pRedBgn); jsonContent.PatternDatas.Add(pRedRef); jsonContent.PatternDatas.Add(pRedBgn);
+            // Green: 5(B), 6(T), 7(B), 8(R), 9(B)
+            jsonContent.PatternDatas.Add(pGreenBgn); jsonContent.PatternDatas.Add(pGreenTest); jsonContent.PatternDatas.Add(pGreenBgn); jsonContent.PatternDatas.Add(pGreenRef); jsonContent.PatternDatas.Add(pGreenBgn);
+            // Blue: 10(B), 11(T), 12(B), 13(R), 14(B)
+            jsonContent.PatternDatas.Add(pBlueBgn); jsonContent.PatternDatas.Add(pBlueTest); jsonContent.PatternDatas.Add(pBlueBgn); jsonContent.PatternDatas.Add(pBlueRef); jsonContent.PatternDatas.Add(pBlueBgn);
+            // Orange: 15(B), 16(T), 17(B), 18(R), 19(B)
+            jsonContent.PatternDatas.Add(pOrangeBgn); jsonContent.PatternDatas.Add(pOrangeTest); jsonContent.PatternDatas.Add(pOrangeBgn); jsonContent.PatternDatas.Add(pOrangeRef); jsonContent.PatternDatas.Add(pOrangeBgn);
+            // Beep: 20(B), 21(B), 22(Pulse), 23(B), 24(B) -> Actually needs to match interval timing
+            jsonContent.PatternDatas.Add(pBeepBgn); jsonContent.PatternDatas.Add(pBeepPulse); jsonContent.PatternDatas.Add(pBeepBgn); jsonContent.PatternDatas.Add(pBeepPulse); jsonContent.PatternDatas.Add(pBeepBgn);
+            #endregion
+
+            #region Sequence creation with Directional Swap
+            // direction == 0 -> Test then Reference
+            // direction == 1 -> Reference then Test
+            int firstR = (direction == 0) ? 1 : 3; int secondR = (direction == 0) ? 3 : 1;
+            int firstG = (direction == 0) ? 6 : 8; int secondG = (direction == 0) ? 8 : 6;
+            int firstB = (direction == 0) ? 11 : 13; int secondB = (direction == 0) ? 13 : 11;
+            int firstY = (direction == 0) ? 16 : 18; int secondY = (direction == 0) ? 18 : 16;
+
+            // Build LED Sequences
+            int[] ledIndices = { RedLedIndex, GreenLedIndex, BlueLedIndex, OrangeLedIndex };
+            int[][] patternMaps = {
+                new int[] {0, firstR, 2, secondR, 4},
+                new int[] {5, firstG, 7, secondG, 9},
+                new int[] {10, firstB, 12, secondB, 14},
+                new int[] {15, firstY, 17, secondY, 19}
             };
 
-            // pattern data for sine stimulation
-            PatternData pRedSineData = new PatternData()
+            for (int l = 0; l < 4; l++)
             {
-                Name = "Red sine"
-            };
-            PatternData pGreenSineData = new PatternData()
-            {
-                Name = "Green sine"
-            };
-            PatternData pBlueSineData = new PatternData()
-            {
-                Name = "Blue sine"
-            };
-            PatternData pYellowSineData = new PatternData()
-            {
-                Name = "Orange sine"
-            };
+                Sequence s = new Sequence { LedIndex = ledIndices[l] };
+                s.Patterns.Add(new Pattern { PatternDataIndex = patternMaps[l][0], Duration = WaitDuration, Interval = WaitDuration });
+                s.Patterns.Add(new Pattern { PatternDataIndex = patternMaps[l][1], Duration = StimulusDuration, Interval = 10 });
+                s.Patterns.Add(new Pattern { PatternDataIndex = patternMaps[l][2], Duration = WaitDuration, Interval = WaitDuration });
+                s.Patterns.Add(new Pattern { PatternDataIndex = patternMaps[l][3], Duration = StimulusDuration, Interval = 10 });
+                s.Patterns.Add(new Pattern { PatternDataIndex = patternMaps[l][4], Duration = 0, Interval = 10 });
+                jsonContent.Sequences.Add(s);
+            }
 
-            // pattern data rising down stimulation
-            PatternData pRedSineDownData = new PatternData()
-            {
-                Name = "Red sine rising down"
-            };
-            PatternData pGreenSineDownData = new PatternData()
-            {
-                Name = "Green sine rising down"
-            };
-            PatternData pBlueSineDownData = new PatternData()
-            {
-                Name = "Blue sine rising down"
-            };
-            PatternData pOrangeSineDownData = new PatternData()
-            {
-                Name = "Orange sine rising down"
-            };
-            // pattern data for background stimulation
-            PatternData pRedBgnData = new PatternData()
-            {
-                Name = "Red Background"
-            };
-            PatternData pGreenBgnData = new PatternData()
-            {
-                Name = "Green Background"
-            };
-            PatternData pBlueBgnData = new PatternData()
-            {
-                Name = "Blue Background"
-            };
-            PatternData pOrangeBgnData = new PatternData()
-            {
-                Name = "Orange Background"
-            };
-            
+            // Beep Sequence (Always the same timing, indices 21 and 23)
+            Sequence bSeq = new Sequence { LedIndex = BeepIndex };
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 20, Duration = WaitDuration, Interval = WaitDuration });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 21, Duration = StimulusDuration, Interval = 10 });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 22, Duration = WaitDuration, Interval = WaitDuration });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 23, Duration = StimulusDuration, Interval = 10 });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 24, Duration = 0, Interval = 10 });
+            jsonContent.Sequences.Add(bSeq);
 
             #endregion
-            #region Sequence creation
-            // generate the relative value with the offset for illuminance correction
-            // vector is used as reference, it's the same result than &RedWave[0] in C language
-            GenerateWave(ref LStimulus,  1, phaseReceptor[0], Sin_SinOnFlag, (int)(100/TF));
-            GenerateWave(ref MStimulus,  1, phaseReceptor[1], Sin_SinOnFlag, (int)(100 / TF));
-            GenerateWave(ref SStimulus,  1, phaseReceptor[2], Sin_SinOnFlag, (int)(100 / TF));
-            GenerateWave(ref ipRGCStimulus,  1, phaseReceptor[3], Sin_SinOnFlag, (int)(100 / TF));
-
-            // generate the PWM value with hamming window
-            /*
-            GenerateRisingUpValue(ref pRedSineUpData.Data, LStimulus, RampTime, ConRed);
-            GenerateRisingUpValue(ref pGreenSineUpData.Data, MStimulus, RampTime, ConGreen);
-            GenerateRisingUpValue(ref pBlueSineUpData.Data, SStimulus, RampTime, ConBlue);
-            GenerateRisingUpValue(ref pOrangeSineUpData.Data, ipRGCStimulus, RampTime, ConOrange);
-
-            GenerateRisingDownValue(ref pRedSineDownData.Data, LStimulus, RampTime, ConRed);
-            GenerateRisingDownValue(ref pGreenSineDownData.Data, MStimulus, RampTime, ConGreen);
-            GenerateRisingDownValue(ref pBlueSineDownData.Data, SStimulus, RampTime, ConBlue);
-            GenerateRisingDownValue(ref pOrangeSineDownData.Data, ipRGCStimulus, RampTime, ConOrange);
-            */
-
-            for (int i = 0; i < LStimulus.Count; i++)
-            {
-                LStimulus[i] = (contrastL * LStimulus[i] + 1) * meanL ;
-            }
-            for (int i = 0; i < MStimulus.Count; i++)
-            {
-                MStimulus[i] = (contrastM* MStimulus[i] + 1) * meanM;
-            }
-            for (int i = 0; i < SStimulus.Count; i++)
-            {
-                SStimulus[i] = (contrastS * SStimulus[i] + 1) * meanS;
-            }
-            for (int i = 0; i < ipRGCStimulus.Count; i++)
-            {
-                ipRGCStimulus[i] = (contrastipRGC * ipRGCStimulus[i] + 1) * meansipRGC;
-            }
-            Vector<double> Red = Vector<double>.Build.Dense(red);
-            Vector<double> Green = Vector<double>.Build.Dense(green);
-            Vector<double> Blue = Vector<double>.Build.Dense(blue);
-            Vector<double> Yellow = Vector<double>.Build.Dense(yellow);
-            Vector<double> Temp = Vector<double>.Build.Dense(temp);
-            Vector<double> RGBY = Vector<double>.Build.Dense(rgby);
-
-            for ( int i = 0; i < LStimulus.Count; i++)
-            {
-                Temp[0] = LStimulus[i];
-                Temp[1] = MStimulus[i];
-                Temp[2] = SStimulus[i];
-                Temp[3] = ipRGCStimulus[i];
-
-                RGBY = c2PArray * Temp;
-
-                Red[i] = RGBY[0];
-                Green[i] = RGBY[1];
-                Blue[i] = RGBY[2];
-                Yellow[i] = RGBY[3];
-            }
-
-            for (int i = 0; i < Red.Count; i++)
-            {
-                pRedSineData.Data.Add((int)( (Math.Pow(Red[i],4) * IntensityVoltage.Int2Volt[0,0] + Math.Pow(Red[i], 3) * IntensityVoltage.Int2Volt[0, 1] + Math.Pow(Red[i], 2) * IntensityVoltage.Int2Volt[0, 2] + Math.Pow(Red[i], 1) * IntensityVoltage.Int2Volt[0, 3]) * MaxPwmValue) );
-            }
-            for (int i = 0; i < Green.Count; i++)
-            {
-                pGreenSineData.Data.Add((int)((Math.Pow(Green[i], 4) * IntensityVoltage.Int2Volt[1, 0] + Math.Pow(Green[i], 3) * IntensityVoltage.Int2Volt[1, 1] + Math.Pow(Green[i], 2) * IntensityVoltage.Int2Volt[1, 2] + Math.Pow(Green[i], 1) * IntensityVoltage.Int2Volt[1, 3]) * MaxPwmValue));
-            }
-            for (int i = 0; i < Blue.Count; i++)
-            {
-                pBlueSineData.Data.Add((int)((Math.Pow(Blue[i], 4) * IntensityVoltage.Int2Volt[2, 0] + Math.Pow(Blue[i], 3) * IntensityVoltage.Int2Volt[2, 1] + Math.Pow(Blue[i], 2) * IntensityVoltage.Int2Volt[2, 2] + Math.Pow(Blue[i], 1) * IntensityVoltage.Int2Volt[2, 3]) * MaxPwmValue));
-            }
-            for (int i = 0; i < Yellow.Count; i++)
-            {
-                pYellowSineData.Data.Add((int)((Math.Pow(Yellow[i], 4) * IntensityVoltage.Int2Volt[3, 0] + Math.Pow(Yellow[i], 3) * IntensityVoltage.Int2Volt[3, 1] + Math.Pow(Yellow[i], 2) * IntensityVoltage.Int2Volt[3, 2] + Math.Pow(Yellow[i], 1) * IntensityVoltage.Int2Volt[3, 3]) * MaxPwmValue));
-            }
-
-            // generate sequence for background
-            pRedBgnData.Data.Add((int)(backgroundCorrectedValue[0] * MaxPwmValue));
-            pGreenBgnData.Data.Add((int)(backgroundCorrectedValue[1] * MaxPwmValue));
-            pBlueBgnData.Data.Add((int)(backgroundCorrectedValue[2] * MaxPwmValue));
-            pOrangeBgnData.Data.Add((int)(backgroundCorrectedValue[3] * MaxPwmValue));
-
-            #endregion
-            #region Json creation
-
-            // add all patternData in the JsonContent
-            jsonContent.PatternDatas.Add(pRedBgnData);
-            jsonContent.PatternDatas.Add(pRedSineData);
-            jsonContent.PatternDatas.Add(pRedBgnData);
-            jsonContent.PatternDatas.Add(pGreenBgnData);
-            jsonContent.PatternDatas.Add(pGreenSineData);
-            jsonContent.PatternDatas.Add(pGreenBgnData);
-            jsonContent.PatternDatas.Add(pBlueBgnData);
-            jsonContent.PatternDatas.Add(pBlueSineData);
-            jsonContent.PatternDatas.Add(pBlueBgnData);
-            jsonContent.PatternDatas.Add(pOrangeBgnData);
-            jsonContent.PatternDatas.Add(pYellowSineData);
-            jsonContent.PatternDatas.Add(pOrangeBgnData);
-
-            // Create all the patterns that will be used
-            Pattern[] stimulations =
-            {
-                
-                // red background
-                new Pattern
-                {
-                    PatternDataIndex = 0,
-                    Duration = WaitDuration,
-                    Interval = WaitDuration
-                },
-                // sine red
-                new Pattern
-                {
-                    PatternDataIndex = 1,
-                    Duration = StimulusDuration,
-                    Interval =10
-                },
-                
-                // red background
-                new Pattern
-                {
-                    PatternDataIndex = 2,
-                    Duration = 0,
-                    Interval = 10
-                },
-                 // green background
-                new Pattern
-                {
-                    PatternDataIndex = 3,
-                    Duration = WaitDuration,
-                    Interval = WaitDuration
-                },
-                // green sine
-                new Pattern
-                {
-                    PatternDataIndex = 4,
-                    Duration = StimulusDuration,
-                    Interval = 10
-                },
-                
-                //green background
-                new Pattern
-                {
-                    PatternDataIndex = 5,
-                    Duration = 0,
-                    Interval = 10
-                },
-                 // blue background
-                new Pattern
-                {
-                    PatternDataIndex = 6,
-                    Duration = WaitDuration,
-                    Interval = WaitDuration
-                },
-                // blue sine
-                new Pattern
-                {
-                    PatternDataIndex = 7,
-                    Duration = StimulusDuration,
-                    Interval = 10
-                },
-                
-                // blue background
-                new Pattern
-                {
-                    PatternDataIndex = 8,
-                    Duration = 0,
-                    Interval = 10
-                },
-                 // yellow background
-                new Pattern
-                {
-                    PatternDataIndex = 9,
-                    Duration = WaitDuration,
-                    Interval = WaitDuration
-                },
-                // yellow sine
-                new Pattern
-                {
-                    PatternDataIndex = 10,
-                    Duration = StimulusDuration,
-                    Interval = 10
-                },
-                
-                // yellow background
-                new Pattern
-                {
-                    PatternDataIndex = 11,
-                    Duration = 0,
-                    Interval = 10
-                }
-            };
-
-            // Create all sequences and add into JSONContent
-            // Create the four sequences for each LED
-            // Red sequence
-            Sequence seq = new Sequence();
-
-            seq.Patterns.Add(new Pattern(stimulations[0]));
-            seq.Patterns.Add(new Pattern(stimulations[1]));
-            seq.Patterns.Add(new Pattern(stimulations[2]));
-            seq.LedIndex = RedLedIndex;
-
-            jsonContent.Sequences.Add(seq);
-
-            // Green sequence
-            seq = new Sequence();
-
-            seq.Patterns.Add(new Pattern(stimulations[3]));
-            seq.Patterns.Add(new Pattern(stimulations[4]));
-            seq.Patterns.Add(new Pattern(stimulations[5]));
-            seq.LedIndex = GreenLedIndex;
-
-            jsonContent.Sequences.Add(seq);
-
-            // Blue sequence
-            seq = new Sequence();
-
-            seq.Patterns.Add(new Pattern(stimulations[6]));
-            seq.Patterns.Add(new Pattern(stimulations[7]));
-            seq.Patterns.Add(new Pattern(stimulations[8]));
-            seq.LedIndex = BlueLedIndex;
-
-            jsonContent.Sequences.Add(seq);
-
-            // orange sequence
-            seq = new Sequence();
-
-            seq.Patterns.Add(new Pattern(stimulations[9]));
-            seq.Patterns.Add(new Pattern(stimulations[10]));
-            seq.Patterns.Add(new Pattern(stimulations[11]));
-            seq.LedIndex = OrangeLedIndex;
-
-            jsonContent.Sequences.Add(seq);
 
             return jsonContent;
-            #endregion
         }
         public static JsonContent GenerateSineStimulationForMeasurement(double[] meanArray, double[] contrastArray, double[] phaseReceptorArray)
         {
@@ -1173,49 +969,42 @@ namespace SequenceGenerator
 
         public static void GenerateWave(ref Vector<double> result, double average, double phase, bool SinOnFlag, int numberOfValue)
         {
-            double e,f;
-            for(int i = 0; i < numberOfValue; i++)
+            double e;
+            for (int i = 0; i < numberOfValue; i++)
             {
-                e = Math.Sin( 2 * Math.PI * i / numberOfValue - phase);
-                
-                /*if(SinOnFlag == true && i <= (numberOfValue/2))
+                if (SinOnFlag == false)
                 {
-                    e = 0;
-                }
-
-                if(contrast > 0)
-                {
-                    if( e > 0) // On stimulus
+                    // LED Shape: Steady Trapezoid (Continuous White)
+                    // Ramp up for the first 1/6th, Stay flat, Ramp down at the last 1/6th
+                    if (i < numberOfValue / 6.0)
                     {
-                        f = contrast * e + average;
+                        e = (double)i / (numberOfValue / 6.0);
                     }
-                    else if(e < 0){
-                        f = average - ( - contrast * e); 
+                    else if (i > numberOfValue * 5.0 / 6.0)
+                    {
+                        e = 6.0 - ((double)i / (numberOfValue / 6.0));
                     }
                     else
                     {
-                        f = average;
+                        e = 1.0; // This makes the stimulus steady/flat in the middle
                     }
                 }
                 else
                 {
-                    if(e > 0)
+                    // Beep Shape: Pulse exactly in the center of the flash
+                    if (i >= (int)(numberOfValue * 0.4) && i <= (int)(numberOfValue * 0.6))
                     {
-                        f = contrast * e + average;
-                    }
-                    else if (e < 0)
-                    {
-                        f = average - (-contrast * e);
+                        e = 0.1;
                     }
                     else
                     {
-                        f = average;
+                        e = 0;
                     }
-                }*/
-                //f = Math.Pow(f, 4) * int2volt[0] + Math.Pow(f, 3) * int2volt[1] + Math.Pow(f, 2) * int2volt[2] + f * int2volt[3];
+                }
                 result[i] = e;
             }
         }
+
         public static int getStimulusDuration()
         {
             return StimulusDuration;

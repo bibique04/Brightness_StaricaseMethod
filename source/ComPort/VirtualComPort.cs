@@ -8,6 +8,9 @@ using System.IO.Ports;
 namespace ComPort
 {
     class VirtualComPort
+
+    // delivers the calculations to the LED hardware through the USB cable
+
     {
         private readonly SerialPort _vcp;
             

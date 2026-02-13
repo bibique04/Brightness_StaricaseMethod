@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Default</RootNamespace>
     <AssemblyName>GanzfeldSoftware</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -52,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ComPort\VirtualComPort.cs" />
+    <Compile Include="Data\StimulusCorrection.cs" />
     <Compile Include="Data\IntensityVoltage.cs" />
     <Compile Include="Data\P2CArray.cs" />
     <Compile Include="Data\Random.cs" />

@@ -310,9 +310,9 @@ namespace SequenceGenerator
             // Beep Sequence (Always the same timing, indices 21 and 23)
             Sequence bSeq = new Sequence { LedIndex = BeepIndex };
             bSeq.Patterns.Add(new Pattern { PatternDataIndex = 20, Duration = WaitDuration, Interval = WaitDuration });
-            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 21, Duration = StimulusDuration, Interval = 10 });
-            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 22, Duration = WaitDuration, Interval = WaitDuration });
-            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 23, Duration = StimulusDuration, Interval = 10 });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 20, Duration = StimulusDuration, Interval = 10 });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 21, Duration = WaitDuration, Interval = WaitDuration });
+            bSeq.Patterns.Add(new Pattern { PatternDataIndex = 20, Duration = StimulusDuration, Interval = 10 });
             bSeq.Patterns.Add(new Pattern { PatternDataIndex = 24, Duration = 0, Interval = 10 });
             jsonContent.Sequences.Add(bSeq);
 

@@ -65,11 +65,11 @@ namespace GanzfeldController
         double[,] C2PArray = new double[4, 4];
         uint OrderCntr;
         uint[] ContrastLevel = new uint[12];
-        uint[] EndFlg = new uint[12] { 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 }; //(0,3)(1,4)(2,5)
+        uint[] EndFlg = new uint[12] { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }; //(0,3)(1,4)(2,5)
         RECORD[] Record = new RECORD[12]; // three objects: first, second, third
         Receptors Contrast = new Receptors(); // L, M, S, ipRGCs
         double[] PhaseAngle = new double[12] { 0, 30, 60, 90, 120, 150, 180, 210, 225, 240, 45, 135 };
-        double[] SFs = new double[12] { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        double[] SFs = new double[12] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         RGB2 AmpLEDs = new RGB2(); // Red, Green, Blue, Orange
         int[] order = new int[24];
 

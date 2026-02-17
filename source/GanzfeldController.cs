@@ -24,21 +24,21 @@ namespace GanzfeldController
         static int InitialCntrstLvl = 33; // increased to 35 from 23 for better visibility
         static int NumberOfReverse = 2; // the number of reversals in the staircase method
 
-    #if TestY  // based on ST_Ganzfeld_RContrastfile_07Sep2019.xls  COMPILED ONLY IN DEBUG
+#if TestY  // based on ST_Ganzfeld_RContrastfile_07Sep2019.xls  COMPILED ONLY IN DEBUG
         // BASELINE INTENSITIES FOR THE 4 LEDS
-        static double ConRed = 0.095577; //r 
-        static double ConGreen = 0.069734; //g
-        static double ConBlue = 0.084462; //b
-        static double ConOrange = 0.189725; //y
-        static double meanL = 60.01593;
-        static double meanM = 20.41335;
-        static double meanS = 1.65755;
-        static double meanipRGC = 17.17489;  // i dont know where these are from
+        static double ConRed = 0.0382766; //r 
+        static double ConGreen = 0.0368295; //g
+        static double ConBlue = 0.0499570; //b
+        static double ConOrange = 0.0378037; //y
+        static double meanL = 20.634;
+        static double meanM = 7.590;
+        static double meanS = 13.222;
+        static double meanipRGC = 17.444;
         static double phaseL = 0;
         static double phaseM = 0;
         static double phaseS = 0;
         static double phaseipRGC = 0;
-    #endif
+#endif
 
         const int WM_LBUTTONDOWN = 0x0201;
         const int WM_RBUTTONDOWN = 0x0204;

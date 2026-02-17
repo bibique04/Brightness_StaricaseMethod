@@ -526,10 +526,10 @@ namespace GanzfeldController
             OmegaT = 2.0 * Math.PI * angle / 360.0;
 
             //伊藤変更
-            //Contrast.L = amp* Math.Cos(OmegaT);
-            //Contrast.M = amp* Math.Sin(OmegaT);
-            Contrast.L = 0;
-            Contrast.M = 0;
+            Contrast.L = amp* Math.Cos(OmegaT);
+            Contrast.M = amp* Math.Sin(OmegaT);
+            //Contrast.L = 0;
+            //Contrast.M = 0;
             //
             Contrast.S = 0.0;
             Contrast.ipRGC = 0.0;
@@ -728,13 +728,52 @@ namespace GanzfeldController
             // To this (Dimmed by half):
             double dimFactor = 0.4; // 0.5 = 50% brightness. Change to 0.25 for 25%, etc.
 
-            // 4. Reference Stimulus (Fixed White Flash)
+            // 4. Reference Stimulus
             double[] refStml = {
                 StimulusCorrection.stimulusCorrection[VectorDirection, 4] * dimFactor,
                 StimulusCorrection.stimulusCorrection[VectorDirection, 5] * dimFactor,
                 StimulusCorrection.stimulusCorrection[VectorDirection, 6] * dimFactor,
                 StimulusCorrection.stimulusCorrection[VectorDirection, 7] * dimFactor
             };
+
+            // --- CALCULATE TEST PLATEAU (Sp1 or Sp2 depending on Direction) ---
+            // These values are the R,G,B,V inputs derived from the Matrix logic
+            Console.WriteLine("\n--- OSCILLOSCOPE MEASUREMENT DATA ---");
+            Console.WriteLine($">>> TRIAL: {OrderCntr} | Direction: {(Direction == 0 ? "Test First" : "Ref First")}");
+
+            // TEST STIMULUS PLATEAU
+            // These are the values before gamma correction, representing the peak duty cycle
+            Console.WriteLine("PLATEAU - TEST STIMULUS (Actual R,G,B,V values):");
+            Console.WriteLine($"  Red: {AmpLEDs.Red:F5}");
+            Console.WriteLine($"  Green: {AmpLEDs.Green:F5}");
+            Console.WriteLine($"  Blue: {AmpLEDs.Blue:F5}");
+            Console.WriteLine($"  Violet(Orange): {AmpLEDs.Orange:F5}");
+
+            // --- CALCULATE REFERENCE PLATEAU (Standard baseline) ---
+            // Create a fixed reference for comparison as shown on the whiteboard
+            double refLevel = 25.0; // The fixed level for your reference flash
+            double refAmp = 0.0005 * Math.Pow(1.258925, refLevel);
+
+            Receptors RefTargets = new Receptors
+            {
+                L = refAmp * meanL,
+                M = refAmp * meanM,
+                S = 0.0,
+                ipRGC = 0.0
+            };
+
+            RGB2 RefLEDs = new RGB2();
+            RGB2 DummyPhase = new RGB2();
+
+            // Apply Matrix logic to find Reference PWMs
+            Cone2PhosAmpPhase(RefTargets, ref RefLEDs, PhaseReceptors, ref DummyPhase);
+
+            Console.WriteLine("PLATEAU - REFERENCE STIMULUS (Standard R,G,B,V values):");
+            Console.WriteLine($"  Red: {RefLEDs.Red:F5}");
+            Console.WriteLine($"  Green: {RefLEDs.Green:F5}");
+            Console.WriteLine($"  Blue: {RefLEDs.Blue:F5}");
+            Console.WriteLine($"  Violet(Orange): {RefLEDs.Orange:F5}");
+            Console.WriteLine("--------------------------------------\n");
 
             // 5. Generate the JSON content for the hardware
             content = ContentGenerator.GenerateSineStimulationWithoutHamming(
@@ -776,6 +815,9 @@ namespace GanzfeldController
 
             int NumberofData;
             int counters = 0;
+
+            // DIAGNOSTIC LOG: This will print the calculated LED values to your Output window
+            Console.WriteLine($"[MATRIX OUTPUT] R: {AmpLEDs.Red:F4} | G: {AmpLEDs.Green:F4} | B: {AmpLEDs.Blue:F4} | O: {AmpLEDs.Orange:F4}");
 
             SerialSend();
         }
@@ -822,10 +864,10 @@ namespace GanzfeldController
                 Console.WriteLine($"    Test was: {testPos} | You chose: {userChoice} | Result: {(isCorrect ? "CORRECT" : "WRONG")}");
 
                 ChkConv((uint)VectorDirection, ContrastLevel[VectorDirection]);
-                CheckTermination();
                 result.Write(OrderCntr.ToString() + " " + ContrastLevel[VectorDirection].ToString() + " " + VectorDirection.ToString() + " " + Direction.ToString() + " " + RightLeft.ToString());  // logs the current trial number, brightness level and user response to the data file
                 UpDown71(isCorrect); // decides whether to make the next pulse brighter or dimmer
-                
+                CheckTermination();
+
                 // Search for the next contrast that hasn't finished its 11 reversals yet
                 do
                 {

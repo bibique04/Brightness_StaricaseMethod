@@ -851,7 +851,7 @@ namespace GanzfeldController
             double[] testStml = { currentAmps.Red, currentAmps.Green, currentAmps.Blue, currentAmps.Orange };
 
             // To this (Dimmed by half):
-            double dimFactor = 0.4; // 0.5 = 50% brightness. Change to 0.25 for 25%, etc.
+            double dimFactor = 1; // 0.5 = 50% brightness. Change to 0.25 for 25%, etc.
 
             // 4. Reference Stimulus (Fixed White Flash)
             double[] refStml = {

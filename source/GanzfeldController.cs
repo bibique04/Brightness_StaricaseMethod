@@ -297,7 +297,7 @@ namespace GanzfeldController
 
             SaveFileDialog dialog = new SaveFileDialog
             {
-                InitialDirectory = @"D:\master_japonia\tsujilab\Results",
+                InitialDirectory = @"C:\Users\tsujilab\source\results",
                 Title = "Browse rst file",
                 CheckPathExists = true,
                 CheckFileExists = false,

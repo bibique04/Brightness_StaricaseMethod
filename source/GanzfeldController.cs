@@ -867,8 +867,16 @@ namespace GanzfeldController
                 testStml, refStml, adapt, Direction
             );
 
-            // 6. Physically send to the cube
-            _vcp.SendJsonContent(JsonConvert.SerializeObject(content));
+            // 1. Convert the content object to a JSON string
+            string jsonToSimulate = JsonConvert.SerializeObject(content);
+
+            // 2. Save it to a fixed location (e.g., your Results folder)
+            // This acts as a "live feed" for your simulator
+            string path = @"C:\Users\tsujilab\source\results\live_stimulus.json";
+            File.WriteAllText(path, jsonToSimulate);
+
+            // 3. Physically send to the hardware as usual
+            _vcp.SendJsonContent(jsonToSimulate);
             foreach (Sequence seq in content.Sequences)
             {
                 _vcp.SendJsonContent("{\"StartSequence\" : " + seq.LedIndex + "}");

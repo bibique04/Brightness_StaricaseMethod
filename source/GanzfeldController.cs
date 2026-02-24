@@ -836,10 +836,10 @@ namespace GanzfeldController
             // This uses your Direct LED scaling (Ratio * Staircase Amplitude)
             RGB2 currentAmps = new RGB2
             {
-                Red = StimulusCorrection.stimulusCorrection[VectorDirection, 0] * currentStaircaseAmp,
-                Green = StimulusCorrection.stimulusCorrection[VectorDirection, 1] * currentStaircaseAmp,
-                Blue = StimulusCorrection.stimulusCorrection[VectorDirection, 2] * currentStaircaseAmp,
-                Orange = StimulusCorrection.stimulusCorrection[VectorDirection, 3] * currentStaircaseAmp
+                Red = StimulusCorrection.stimulusCorrection[0, 0] * currentStaircaseAmp,
+                Green = StimulusCorrection.stimulusCorrection[0, 1] * currentStaircaseAmp,
+                Blue = StimulusCorrection.stimulusCorrection[0, 2] * currentStaircaseAmp,
+                Orange = StimulusCorrection.stimulusCorrection[0, 3] * currentStaircaseAmp
             };
 
             // 2. CALL THE FINAL CALCDUTIES
@@ -850,15 +850,12 @@ namespace GanzfeldController
             // 3. Extract the calibrated/safe values
             double[] testStml = { currentAmps.Red, currentAmps.Green, currentAmps.Blue, currentAmps.Orange };
 
-            // To this (Dimmed by half):
-            double dimFactor = 1; // 0.5 = 50% brightness. Change to 0.25 for 25%, etc.
-
             // 4. Reference Stimulus (Fixed White Flash)
             double[] refStml = {
-                StimulusCorrection.stimulusCorrection[VectorDirection, 4] * dimFactor,
-                StimulusCorrection.stimulusCorrection[VectorDirection, 5] * dimFactor,
-                StimulusCorrection.stimulusCorrection[VectorDirection, 6] * dimFactor,
-                StimulusCorrection.stimulusCorrection[VectorDirection, 7] * dimFactor
+                StimulusCorrection.stimulusCorrection[0, 4],
+                StimulusCorrection.stimulusCorrection[0, 5],
+                StimulusCorrection.stimulusCorrection[0, 6],
+                StimulusCorrection.stimulusCorrection[0, 7]
             };
 
             // 5. Generate the JSON content for the hardware

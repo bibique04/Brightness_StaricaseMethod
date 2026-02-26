@@ -929,7 +929,7 @@ namespace GanzfeldController
 
                 ChkConv((uint)VectorDirection, ContrastLevel[VectorDirection]);
                 CheckTermination();
-                result.Write(OrderCntr.ToString() + " " + ContrastLevel[VectorDirection].ToString() + " " + VectorDirection.ToString() + " " + Direction.ToString() + " " + RightLeft.ToString());  // logs the current trial number, brightness level and user response to the data file
+                result.Write(OrderCntr.ToString() + " " + ContrastLevel[VectorDirection].ToString() + " " + VectorDirection.ToString() + " " + Direction.ToString() + " " + rl.ToString());  // logs the current trial number, brightness level and user response to the data file
                 UpDown71(isCorrect); // decides whether to make the next pulse brighter or dimmer
                 
                 // Search for the next contrast that hasn't finished its 11 reversals yet

@@ -23,7 +23,7 @@ namespace GanzfeldController
         static double PI = (4.0 * Math.Atan(1.0));
         static int N = 140; // only used in invmat1
         static int InitialCntrstLvl = 33; // increased to 35 from 23 for better visibility
-        static int NumberOfReverse = 2; // the number of reversals in the staircase method
+        static int NumberOfReverse = 11; // the number of reversals in the staircase method
 
 #if TestY  // based on ST_Ganzfeld_RContrastfile_07Sep2019.xls  COMPILED ONLY IN DEBUG
         // BASELINE INTENSITIES FOR THE 4 LEDS

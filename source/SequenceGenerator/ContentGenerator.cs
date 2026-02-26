@@ -16,10 +16,10 @@ namespace SequenceGenerator
 
 
         private const int MaxPwmValue = 65535;
-        private const int StimulusDuration = 10000; //msec
+        private const int StimulusDuration = 3000; //msec
         private const int RampTime = 1000; //msec
         private const int WaitDuration = 1000; //ms
-        private const double TF = 0.1;// Hz
+        private const double TF = 10000 / StimulusDuration;// Hz
         private const bool Sin_SinOnFlag = false;
 
         private const int MeasurementDuration = 20000;

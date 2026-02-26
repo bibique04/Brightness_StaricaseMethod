@@ -3,11 +3,11 @@
     public class StimulusCorrection
     {
         // We only need one row now. 
-        // Columns 0-3: Test Ratios (A5 White)
-        // Columns 4-7: Ref Ratios (A5 White dimmed by 50% manually)
+        // Columns 0-3: Test Ratios
+        // Columns 4-7: Ref Ratios
         public static double[,] stimulusCorrection = new double[,]
         {
-            { 0.3827, 0.3682, 0.4995, 0.3780,  0.1913, 0.1841, 0.2497, 0.1890 }
+            { 0.306212425, 0.294636154, 0.399655785, 0.302429479, 0.191382765, 0.184147596, 0.249784866, 0.189018424 }
         };
     }
 }

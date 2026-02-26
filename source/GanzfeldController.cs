@@ -27,10 +27,10 @@ namespace GanzfeldController
 
 #if TestY  // based on ST_Ganzfeld_RContrastfile_07Sep2019.xls  COMPILED ONLY IN DEBUG
         // BASELINE INTENSITIES FOR THE 4 LEDS
-        static double ConRed = 0.0382766; //r 
-        static double ConGreen = 0.0368295; //g
-        static double ConBlue = 0.0499570; //b
-        static double ConOrange = 0.0378037; //y
+        static double ConRed = 0.038276553; //r 
+        static double ConGreen = 0.036829519; //g  THESE ARE FOR THE BACKGROUND AND ADAPTATION
+        static double ConBlue = 0.049956973; //b  -90% LightFlux
+        static double ConOrange = 0.037803685; //y
         static double meanL = 20.634;
         static double meanM = 7.590;
         static double meanS = 13.222;
@@ -662,7 +662,7 @@ namespace GanzfeldController
          * Sine/Cosine math to split that amplitude into specific targets for the L-cones and M-cones in the eye. */
 
         {
-            currentStaircaseAmp = 0.0005 * Math.Pow(1.258925, (double)ContrastLevel); // 0.0005 * Math.Pow(1.258925, (double)ContrastLevel);
+            currentStaircaseAmp = 0.0005 * Math.Pow(1.258925, (double)ContrastLevel);
         }
 
         //---------------------------------------------------------------------------
